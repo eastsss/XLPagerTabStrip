@@ -40,7 +40,8 @@ public enum ButtonBarItemSpec<CellType: UICollectionViewCell> {
 }
 
 public struct ButtonBarPagerTabStripSettings {
-
+    public typealias AttributedTitleClosure = (String?) -> NSAttributedString?
+    
     public struct Style {
         public var buttonBarBackgroundColor: UIColor?
         public var buttonBarMinimumInteritemSpacing: CGFloat?
@@ -54,6 +55,7 @@ public struct ButtonBarPagerTabStripSettings {
 
         public var buttonBarItemBackgroundColor: UIColor?
         public var buttonBarItemFont = UIFont.systemFont(ofSize: 18)
+        public var buttonBarItemAttributedTitleClosure: AttributedTitleClosure?
         public var buttonBarItemLeftRightMargin: CGFloat = 8
         public var buttonBarItemTitleColor: UIColor?
         @available(*, deprecated: 7.0.0) public var buttonBarItemsShouldFillAvailiableWidth: Bool {
@@ -110,12 +112,16 @@ open class ButtonBarPagerTabStripViewController: PagerTabStripViewController, Pa
         }
         
         buttonBarItemSpec = .nibFile(nibName: "ButtonCell", bundle: bundle, width: { [weak self] (childItemInfo) -> CGFloat in
-                let label = UILabel()
-                label.translatesAutoresizingMaskIntoConstraints = false
+            let label = UILabel()
+            label.translatesAutoresizingMaskIntoConstraints = false
+            if let closure = self?.settings.style.buttonBarItemAttributedTitleClosure {
+                label.attributedText = closure(childItemInfo.title)
+            } else {
                 label.font = self?.settings.style.buttonBarItemFont
                 label.text = childItemInfo.title
-                let labelSize = label.intrinsicContentSize
-                return labelSize.width + (self?.settings.style.buttonBarItemLeftRightMargin ?? 8) * 2
+            }
+            let labelSize = label.intrinsicContentSize
+            return labelSize.width + (self?.settings.style.buttonBarItemLeftRightMargin ?? 8) * 2
         })
 
         let buttonBarViewAux = buttonBarView ?? {
@@ -323,10 +329,14 @@ open class ButtonBarPagerTabStripViewController: PagerTabStripViewController, Pa
         let childController = viewControllers[indexPath.item] as! IndicatorInfoProvider // swiftlint:disable:this force_cast
         let indicatorInfo = childController.indicatorInfo(for: self)
 
-        cell.label.text = indicatorInfo.title
         cell.accessibilityLabel = indicatorInfo.accessibilityLabel
-        cell.label.font = settings.style.buttonBarItemFont
-        cell.label.textColor = settings.style.buttonBarItemTitleColor ?? cell.label.textColor
+        if let closure = settings.style.buttonBarItemAttributedTitleClosure {
+            cell.label.attributedText = closure(indicatorInfo.title)
+        } else {
+            cell.label.font = settings.style.buttonBarItemFont
+            cell.label.text = indicatorInfo.title
+            cell.label.textColor = settings.style.buttonBarItemTitleColor ?? cell.label.textColor
+        }
         cell.contentView.backgroundColor = settings.style.buttonBarItemBackgroundColor ?? cell.contentView.backgroundColor
         cell.backgroundColor = settings.style.buttonBarItemBackgroundColor ?? cell.backgroundColor
         if let image = indicatorInfo.image {
