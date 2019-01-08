@@ -329,7 +329,6 @@ open class ButtonBarPagerTabStripViewController: PagerTabStripViewController, Pa
         let childController = viewControllers[indexPath.item] as! IndicatorInfoProvider // swiftlint:disable:this force_cast
         let indicatorInfo = childController.indicatorInfo(for: self)
 
-        cell.accessibilityLabel = indicatorInfo.accessibilityLabel
         if let closure = settings.style.buttonBarItemAttributedTitleClosure {
             cell.label.attributedText = closure(indicatorInfo.title)
         } else {
@@ -358,9 +357,8 @@ open class ButtonBarPagerTabStripViewController: PagerTabStripViewController, Pa
             }
         }
         cell.isAccessibilityElement = true
-        cell.accessibilityLabel = cell.label.text
-        cell.accessibilityTraits |= UIAccessibilityTraitButton
-        cell.accessibilityTraits |= UIAccessibilityTraitHeader
+        cell.accessibilityLabel = indicatorInfo.accessibilityLabel ?? cell.label.text
+        cell.accessibilityTraits.insert([.button, .header])
         return cell
     }
 
